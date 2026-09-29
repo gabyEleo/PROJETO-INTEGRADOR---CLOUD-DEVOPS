@@ -87,6 +87,7 @@
             >Serviços</a
           >
           <a href="#pedidos" data-nav="pedidos">Minhas solicitações</a>
+          <a href="#painel" data-nav="painel">Meu painel</a>
         </nav>
         <div class="header-actions">
           <button class="button button-primary" id="offer-button" type="button">
@@ -305,7 +306,7 @@
         <div id="customer-requests" class="stack"></div>
       </section>
 
-      <!--serviços -->
+      <!-- painel pessoal do profissional -->
       <section
         id="view-painel"
         class="view inner-view"
@@ -314,9 +315,9 @@
       >
         <div class="section-heading">
           <div>
-            <p class="eyebrow">PAINEL DE SERVIÇOS</p>
+            <p class="eyebrow">ÁREA DO PROFISSIONAL</p>
             <h1 id="dashboard-title" class="page-title">
-              Seu trabalho, bem organizado.
+              Meu painel profissional
             </h1>
             <p id="dashboard-greeting" class="muted"></p>
           </div>
@@ -324,14 +325,11 @@
             Atualizar painel
           </button>
         </div>
-        <div class="surface dashboard-selection">
-          <label for="dashboard-professional"
-            >Escolha um profissional<select id="dashboard-professional"></select
-          ></label>
-          <p class="muted small">
-            Demonstração: gerencie os pedidos registrados neste navegador.
-          </p>
-        </div>
+        <article
+          id="dashboard-profile"
+          class="surface dashboard-profile"
+          aria-label="Meu perfil profissional"
+        ></article>
         <div id="dashboard-stats" class="stats-grid"></div>
         <div class="tabs" role="tablist" aria-label="Seções do painel">
           <button
@@ -365,7 +363,7 @@
             data-tab="profile"
             tabindex="-1"
           >
-            Perfil
+            Editar perfil
           </button>
         </div>
         <div
@@ -388,7 +386,7 @@
           hidden
         >
           <form id="edit-profile-form" class="surface form-grid">
-            <h2 class="full">Informações do perfil</h2>
+            <h2 class="full">Informações do meu perfil</h2>
             <div id="edit-profile-fields" class="full form-grid"></div>
             <p class="form-error full" role="alert" hidden></p>
             <div class="full button-row">
@@ -424,6 +422,12 @@
       <div class="container academic-info">
         <div>
           <strong>Projeto integrador · Cloud &amp; DevOps</strong>
+          <p>
+            Integrantes:
+            <span id="group-members"
+              >Gabrielly Maria Nunes Vieira  e  Leonardo Lopes Magalhães</span
+            >
+          </p>
         </div>
         <span>Projeto acadêmico · 2026</span>
       </div>

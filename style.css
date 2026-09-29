@@ -869,6 +869,53 @@ main:focus {
   margin: 10px 0;
   overflow-wrap: anywhere;
 }
+
+/* 07. PAINEL DO PROFISSIONAL */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin: 25px 0 30px;
+}
+.stat {
+  border: 1px solid var(--border);
+  padding: 22px;
+  background: white;
+  border-radius: 14px;
+}
+.stat small {
+  color: var(--muted);
+}
+.stat strong {
+  display: block;
+  font-size: 1.9rem;
+  line-height: 1.4;
+  color: var(--primary);
+  margin-top: 8px;
+}
+.tabs {
+  display: flex;
+  gap: 25px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 25px;
+}
+.tab {
+  font-size: 0.95rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: 13px 3px;
+  color: var(--muted);
+}
+.tab.active {
+  color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 650;
+}
+#edit-profile-form {
+  max-width: 820px;
+}
+
 /* 08. FORMULÁRIOS E JANELAS*/
 label {
   font-size: 0.9rem;
@@ -1442,13 +1489,60 @@ label small {
   color: var(--muted);
   font-size: 0.85rem;
 }
-.dashboard-selection {
+/* PERFIL PESSOAL NO PAINEL */
+.dashboard-profile {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 24px;
 }
-.dashboard-selection label {
-  min-width: 220px;
+.dashboard-profile-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
+}
+.dashboard-profile .avatar {
+  width: 80px;
+  height: 80px;
+  font-size: 1.5rem;
+}
+.dashboard-profile .avatar .icon {
+  width: 30px;
+  height: 30px;
+}
+.dashboard-profile-info {
+  min-width: 0;
+}
+.dashboard-profile .eyebrow {
+  margin: 0 0 8px;
+}
+.dashboard-profile h2 {
+  margin: 0 0 6px;
+  font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+  overflow-wrap: anywhere;
+}
+.dashboard-profile-service {
+  margin: 0 0 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.dashboard-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 12px;
+}
+.dashboard-profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.dashboard-profile-actions .button {
+  justify-content: center;
 }
 @media (max-width: 780px) {
   .brand-logo {
@@ -1463,13 +1557,35 @@ label small {
     gap: 6px;
     font-size: 0.75rem;
   }
-  .dashboard-selection {
+  .dashboard-profile {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 20px;
   }
-  .dashboard-selection label {
-    min-width: 0;
+  .dashboard-profile-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .dashboard-profile-actions .button {
+    flex: 1;
+  }
+}
+@media (max-width: 540px) {
+  .dashboard-profile-main {
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .dashboard-profile .avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 1.15rem;
+  }
+  .dashboard-profile .avatar .icon {
+    width: 24px;
+    height: 24px;
+  }
+  .dashboard-profile-actions {
+    flex-direction: column;
   }
 }
 @media (max-width: 360px) {

@@ -20,6 +20,7 @@
     cancelled: "Cancelado",
     declined: "Recusado",
   };
+  const PERSONAL_PROFILE_ID = "my-professional-profile";
   const examples = [
     [
       "marina",
@@ -35,8 +36,8 @@
     [
       "carlos",
       "Carlos Almeida",
-      "Manaus",
-      "Flores",
+      "Rondonia",
+      "Ouro Preto",
       "jardinagem",
       "Seu jardim cheio de vida.",
       "Poda, manutenção de plantas, limpeza de canteiros e cuidado com pequenos jardins. Me conte o tamanho do espaço e o que suas plantas precisam para combinarmos o serviço.",
@@ -46,8 +47,8 @@
     [
       "marcos",
       "Marcos Benício",
+      "Rondonia",
       "Ji-Paraná",
-      "Parque 10",
       "reparos",
       "Aqueles reparos que fazem a diferença.",
       "Instalação de prateleiras, ajuste de portas e pequenos reparos domésticos. Materiais combinados à parte. Não inclui intervenções em rede elétrica ou gás.",
@@ -57,8 +58,8 @@
     [
       "juliana",
       "Juliana Oliveira",
-      "São Paulo",
-      "Vila Mariana",
+      "Rondonia",
+      "Porto Velho",
       "pintura",
       "Uma nova cor para a sua casa.",
       "Pintura interna com preparação das superfícies e proteção dos móveis. Atendimento cuidadoso do começo à limpeza final. Tintas e materiais são combinados no orçamento.",
@@ -68,8 +69,8 @@
     [
       "rafael",
       "Rafael Lima",
-      "Manaus",
-      "Dom Pedro",
+      "Rondonia",
+      "Ariquemes",
       "montagem",
       "Do manual ao móvel pronto.",
       "Montagem de mesas, estantes, cômodas e outros móveis conforme o manual do fabricante. Informe o modelo e as dimensões para receber um orçamento adequado.",
@@ -79,8 +80,8 @@
     [
       "ana",
       "Ana Martins",
-      "São Paulo",
-      "Pinheiros",
+      "Rondonia",
+      "Porto Velho",
       "limpeza",
       "Seu apartamento em boas mãos.",
       "Limpeza de apartamentos, pisos, superfícies e banheiros. Trabalho com pontualidade e cuidado com os seus objetos. Combine a quantidade de cômodos antes da visita.",
@@ -91,7 +92,6 @@
 
   const state = {
     data: null,
-    selectedProfessional: null,
     professionals: [],
     category: "",
     profile: null,
@@ -168,6 +168,7 @@
 
   //dados locais
   const STORAGE_KEY = "zelo-static-v1";
+  const EXAMPLES_SIGNATURE = JSON.stringify(examples);
   let memoryOnly = false;
   function createExampleData() {
     const professionals = [];
@@ -216,7 +217,59 @@
         );
       },
     );
-    return { version: 1, professionals, requests: [], reviews };
+    return {
+      version: 1,
+      examplesSignature: EXAMPLES_SIGNATURE,
+      professionals,
+      requests: [],
+      reviews,
+    };
+  }
+
+  function syncExamples(saved) {
+    if (saved.examplesSignature === EXAMPLES_SIGNATURE) return saved;
+
+    const current = createExampleData();
+    const currentId = (id) =>
+      id === "example-paulo" ? "example-marcos" : id;
+
+    const professionals = new Map(
+      saved.professionals.map((professional) => {
+        const id = currentId(professional.id);
+        return [id, { ...professional, id }];
+      }),
+    );
+    current.professionals.forEach((professional) => {
+      professionals.set(professional.id, {
+        ...professionals.get(professional.id),
+        ...professional,
+      });
+    });
+
+    const reviews = new Map(
+      saved.reviews.map((review) => {
+        const professional_id = currentId(review.professional_id);
+        const id =
+          review.is_example &&
+          professional_id !== review.professional_id &&
+          review.id.startsWith(`${review.professional_id}-`)
+            ? professional_id + review.id.slice(review.professional_id.length)
+            : review.id;
+        return [id, { ...review, id, professional_id }];
+      }),
+    );
+    current.reviews.forEach((review) => reviews.set(review.id, review));
+
+    return {
+      ...saved,
+      examplesSignature: EXAMPLES_SIGNATURE,
+      professionals: [...professionals.values()],
+      requests: saved.requests.map((order) => ({
+        ...order,
+        professional_id: currentId(order.professional_id),
+      })),
+      reviews: [...reviews.values()],
+    };
   }
   function storageWarning(message) {
     $("#storage-warning").textContent = message;
@@ -270,7 +323,7 @@
       if (!raw) return createExampleData();
       const parsed = JSON.parse(raw);
       if (!validSavedData(parsed)) throw new Error("Dados locais inválidos");
-      return parsed;
+      return syncExamples(parsed);
     } catch {
       memoryOnly = true;
       storageWarning(
@@ -287,7 +340,7 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (validSavedData(parsed)) current = parsed;
+          if (validSavedData(parsed)) current = syncExamples(parsed);
         }
       } catch {
         memoryOnly = true;
@@ -540,7 +593,7 @@
     $("#professionals-grid").innerHTML = found
       .map(
         (pro) =>
-          `<article class="professional-card"><div class="card-body"><div class="card-top">${categoryLabel(pro.category)}${pro.is_example ? '<span class="badge badge-example">Exemplo</span>' : '<span class="badge">Profissional</span>'}</div><div class="person-row">${avatar(pro)}<div class="person-meta"><h3>${esc(pro.name)}</h3><span class="location">${icon("pin")}${esc(pro.neighborhood)} · ${esc(pro.city)}</span></div></div><div><h4 class="card-title">${esc(pro.title)}</h4><p class="card-description">${esc(pro.bio.length > 125 ? `${pro.bio.slice(0, 122)}…` : pro.bio)}</p></div><div class="card-rating-row">${rating(pro)}</div></div><div class="card-footer"><span class="price"><span class="price-label">A partir de</span>${money(pro.price_cents)} <small>/ ${esc(pro.unit)}</small></span><a class="button profile-button" href="#perfil/${encodeURIComponent(pro.id)}" aria-label="Ver perfil de ${esc(pro.name)}">Ver perfil ${icon("arrow")}</a></div></article>`,
+          `<article class="professional-card"><div class="card-body"><div class="card-top">${categoryLabel(pro.category)}${pro.is_example ? '' : '<span class="badge">Profissional</span>'}</div><div class="person-row">${avatar(pro)}<div class="person-meta"><h3>${esc(pro.name)}</h3><span class="location">${icon("pin")}${esc(pro.neighborhood)} · ${esc(pro.city)}</span></div></div><div><h4 class="card-title">${esc(pro.title)}</h4><p class="card-description">${esc(pro.bio.length > 125 ? `${pro.bio.slice(0, 122)}…` : pro.bio)}</p></div><div class="card-rating-row">${rating(pro)}</div></div><div class="card-footer"><span class="price"><span class="price-label">A partir de</span>${money(pro.price_cents)} <small>/ ${esc(pro.unit)}</small></span><a class="button profile-button" href="#perfil/${encodeURIComponent(pro.id)}" aria-label="Ver perfil de ${esc(pro.name)}">Ver perfil ${icon("arrow")}</a></div></article>`,
       )
       .join("");
     return found;
@@ -643,30 +696,25 @@
     }),
   );
 
-  //painel profissional
+  // PAINEL PESSOAL DO PROFISSIONAL
   async function loadDashboard(sequence) {
-    const professionals = getProfessionals();
-    const professional =
-      professionals.find((pro) => pro.id === state.selectedProfessional) ||
-      professionals[0];
-    state.selectedProfessional = professional.id;
-    $("#dashboard-professional").innerHTML = professionals
-      .map(
-        (pro) =>
-          `<option value="${esc(pro.id)}">${esc(pro.name)}${pro.is_example ? " (exemplo)" : ""}</option>`,
-      )
-      .join("");
-    $("#dashboard-professional").value = professional.id;
+    const professional = getProfessionals().find(
+      (pro) => pro.id === PERSONAL_PROFILE_ID,
+    );
     const data = {
       professional,
-      requests: getRequests(professional.id),
-      reviews: getReviews(professional.id),
+      requests: professional ? getRequests(PERSONAL_PROFILE_ID) : [],
+      reviews: professional ? getReviews(PERSONAL_PROFILE_ID) : [],
     };
     if (sequence !== state.routeSequence) return;
     state.dashboard = data;
     const pro = data.professional;
-    $("#dashboard-greeting").textContent =
-      `Pedidos e avaliações de ${pro.name}, salvos neste navegador.`;
+    $("#dashboard-greeting").textContent = pro
+      ? `Olá, ${pro.name.split(/\s+/)[0]}! Acompanhe seus serviços e avaliações.`
+      : "Seu espaço para organizar os serviços.";
+    $("#dashboard-profile").innerHTML = pro
+      ? `<div class="dashboard-profile-main">${avatar(pro)}<div class="dashboard-profile-info"><p class="eyebrow">MEU PERFIL</p><h2>${esc(pro.name)}</h2><p class="dashboard-profile-service">${esc(pro.title)}</p><p class="location">${icon("pin")}${esc(pro.neighborhood)} · ${esc(pro.city)}</p><div class="dashboard-profile-meta">${categoryLabel(pro.category)}${rating(pro)}</div></div></div><div class="dashboard-profile-actions"><button class="button button-primary" type="button" data-edit-own-profile>Editar perfil</button><a class="button button-secondary" href="#perfil/${encodeURIComponent(PERSONAL_PROFILE_ID)}">Ver perfil público ↗</a></div>`
+      : `<div class="dashboard-profile-main"><span class="avatar" aria-hidden="true">${icon("tool")}</span><div class="dashboard-profile-info"><p class="eyebrow">MEU PERFIL</p><h2>Seu perfil profissional</h2><p class="dashboard-profile-service">Adicione seu nome, sua localização e o serviço que você oferece.</p><span class="badge">Perfil a completar</span></div></div><div class="dashboard-profile-actions"><button class="button button-primary" type="button" data-edit-own-profile>Completar meu perfil</button></div>`;
     $("#dashboard-stats").innerHTML = [
       [
         "Novas solicitações",
@@ -682,7 +730,7 @@
       ],
       [
         "Avaliação média",
-        pro.review_count
+        pro?.review_count
           ? `${Number(pro.rating).toFixed(1).replace(".", ",")} ★`
           : "—",
       ],
@@ -695,14 +743,19 @@
     $("#panel-requests").innerHTML = data.requests.length
       ? data.requests.map((order) => requestCard(order, true)).join("")
       : empty(
-          "Nenhum pedido para este profissional",
-          "Experimente solicitar um serviço no perfil. O pedido aparecerá neste painel local.",
-          `<a class="button button-secondary" href="#perfil/${encodeURIComponent(pro.id)}">Ver meu perfil público</a>`,
+          "Você ainda não recebeu solicitações",
+          pro
+            ? "Seus pedidos de serviço aparecerão aqui para você acompanhar."
+            : "Complete seu perfil para apresentar seus serviços no catálogo.",
+          pro
+            ? `<a class="button button-secondary" href="#perfil/${encodeURIComponent(PERSONAL_PROFILE_ID)}">Ver meu perfil público</a>`
+            : '<button class="button button-secondary" type="button" data-edit-own-profile>Completar meu perfil</button>',
         );
     $("#panel-reviews").innerHTML =
       `<div class="surface">${renderReviews(data.reviews)}</div>`;
-    $("#edit-profile-fields").innerHTML = profileFields(pro);
-    $("#public-profile-link").href = `#perfil/${encodeURIComponent(pro.id)}`;
+    $("#edit-profile-fields").innerHTML = profileFields(pro || {});
+    $("#public-profile-link").hidden = !pro;
+    $("#public-profile-link").href = `#perfil/${encodeURIComponent(PERSONAL_PROFILE_ID)}`;
   }
   function switchTab(name) {
     $$(".tab").forEach((tab) => {
@@ -733,16 +786,25 @@
       }
     });
   });
+  function savePersonalProfile(body) {
+    const values = profileData(body);
+    commitChange((data) => {
+      const pro = data.professionals.find(
+        (professional) => professional.id === PERSONAL_PROFILE_ID,
+      );
+      if (pro) Object.assign(pro, values);
+      else
+        data.professionals.unshift({
+          ...values,
+          id: PERSONAL_PROFILE_ID,
+          is_example: false,
+          created_at: Date.now(),
+        });
+    });
+  }
   $("#edit-profile-form").addEventListener("submit", (event) =>
     submitForm(event, async (body) => {
-      const values = profileData(body);
-      commitChange((data) => {
-        const pro = data.professionals.find(
-          (pro) => pro.id === state.selectedProfessional,
-        );
-        if (!pro) throw new Error("Escolha um profissional.");
-        Object.assign(pro, values);
-      });
+      savePersonalProfile(body);
       toast("Seu perfil foi atualizado.");
       await route(false);
     }),
@@ -751,35 +813,29 @@
   //ADICIONAR SERVIÇO NO CATALOGO LOCAL
   function openOffer() {
     const form = $("#offer-form");
+    const pro = getProfessionals().find(
+      (professional) => professional.id === PERSONAL_PROFILE_ID,
+    );
+    $("#offer-fields").innerHTML = profileFields(pro || {});
     form.reset();
+    $("[type=submit]", form).textContent = pro
+      ? "Salvar serviço"
+      : "Adicionar serviço";
     $(".form-error", form).hidden = true;
     openDialog("#offer-dialog");
   }
   $("#offer-button").addEventListener("click", openOffer);
   $("#offer-form").addEventListener("submit", (event) =>
     submitForm(event, async (body, form) => {
-      const values = profileData(body);
-      const id = newId();
-      commitChange((data) =>
-        data.professionals.unshift({
-          ...values,
-          id,
-          is_example: false,
-          created_at: Date.now(),
-        }),
-      );
-      state.selectedProfessional = id;
+      savePersonalProfile(body);
       form.reset();
       closeDialog($("#offer-dialog"));
-      toast("Serviço adicionado ao catálogo deste navegador.");
+      toast("Seu serviço foi salvo. Acompanhe as solicitações no seu painel.");
+      switchTab("requests");
       if (location.hash === "#painel") await route();
       else location.hash = "#painel";
     }),
   );
-  $("#dashboard-professional").addEventListener("change", (event) => {
-    state.selectedProfessional = event.target.value;
-    loadDashboard(state.routeSequence);
-  });
 
   //delegação p evitar repetir listeners em cartões
   $("#search-form").addEventListener("submit", (event) => {
@@ -827,6 +883,10 @@
   document.addEventListener("click", async (event) => {
     const button = event.target.closest("button");
     if (!button) return;
+    if (button.matches("[data-edit-own-profile]")) {
+      switchTab("profile");
+      $('#edit-profile-fields input[name="name"]').focus();
+    }
     if (button.matches("[data-close-dialog]"))
       closeDialog(button.closest("dialog"));
     if (button.matches("[data-open-offer]")) openOffer();
